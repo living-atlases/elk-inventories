@@ -1,0 +1,101 @@
+
+- name: set up system configuration - vm.swappiness
+  lineinfile: dest=/etc/sysctl.conf line="vm.swappiness = 1" regexp="^vm.swappiness[\s]?=" state=present
+  notify: reload sysctl
+
+- name: set up system configuration - connections per port
+  lineinfile: dest=/etc/sysctl.conf line="net.core.somaxconn = 65535" regexp="^net.core.somaxconn[\s]?=" state=present
+  notify: reload sysctl
+
+- name: set up system configuration - fs.file-max
+  lineinfile: dest=/etc/sysctl.conf line="fs.file-max = 518144" regexp="^fs.file-max[\s]?=" state=present
+  notify: reload sysctl
+
+- name: set up system configuration - limits for elasticsearch user
+  blockinfile:
+    path: /etc/security/limits.conf
+    block: |
+      elasticsearch    soft    nofile          65535
+      elasticsearch    hard    nofile          65535
+      elasticsearch    soft    memlock         unlimited
+      elasticsearch    hard    memlock         unlimited
+
+- name: set up system configuration - pam_limits common-session-noninteractive
+  lineinfile: dest=/etc/pam.d/common-session-noninteractive line="session required pam_limits.so" regexp="^session required pam_limits.so" state=present
+
+- name: set up system configuration - pam_limits common-session
+  lineinfile: dest=/etc/pam.d/common-session line="session required pam_limits.so" regexp="^session required pam_limits.so" state=present
+
+- name: Ensure dependencies are installed.
+  apt:
+    name:
+      - apt-transport-https
+      - gnupg
+    state: present
+
+- name: add apt key for elastic
+  apt_key: url="https://artifacts.elastic.co/GPG-KEY-elasticsearch" state=present
+
+- name: add elastic {{ es_major_version }} apt source list
+  copy: content="deb https://artifacts.elastic.co/packages/{{ es_major_version }}/apt stable main" dest="/etc/apt/sources.list.d/elastic-7.x.list"
+
+- name: install openjdk 8 java
+  apt: pkg=openjdk-8-jdk state=present update_cache=yes
+
+- name: install elasticsearch
+  apt: name="elasticsearch{{ '-oss' if oss_version is defined and oss_version | bool == True else '' }}={{ elasticsearch_version }}"
+
+- name: check directory for elasticsearch data exists
+  file: path="{{ elasticsearch_data_path }}" state=directory owner=root group=elasticsearch mode=0775
+
+- name: check directory for elasticsearch logs exists
+  file: path="{{ elasticsearch_logs_path }}" state=directory owner=root group=elasticsearch mode=0775
+
+- name: check directory for elasticsearch certs exists
+  file: path="/etc/elasticsearch/certs/" state=directory owner=root group=elasticsearch mode=0770
+  when: elasticsearch_security_enabled | bool == True
+
+- name: copy elasticsearch certs
+  copy:
+    src: "files/elastic-certificates.p12"
+    dest: "/etc/elasticsearch/certs/elastic-certificates.p12"
+    owner: "root"
+    group: "elasticsearch"
+    mode: 0640
+  when: elasticsearch_security_enabled | bool == True
+
+- name: copy elasticsearch ca
+  copy:
+    src: "files/elastic-stack-ca.p12"
+    dest: "/etc/elasticsearch/certs/elastic-stack-ca.p12"
+    owner: "root"
+    group: "elasticsearch"
+    mode: 0640
+  when: elasticsearch_security_enabled | bool == True
+
+- name: setup elasticsearch.yml
+  template:
+    src: "elasticsearch.yml.j2"
+    dest: "/etc/elasticsearch/elasticsearch.yml"
+    owner: "root"
+    group: "elasticsearch"
+    mode: 0660
+    backup: yes
+  tags: properties
+
+- name: setup jvm.options
+  template:
+    src: "jvm.options.j2"
+    dest: "/etc/elasticsearch/jvm.options"
+    owner: "root"
+    group: "elasticsearch"
+    mode: 0660
+    backup: yes
+  when: 0 > 1 # disabled for now, waiting for new server specs
+
+- name: check that elasticsearch is set to start on boot
+  command: systemctl enable elasticsearch.service
+  when: ansible_distribution == 'Ubuntu' and ansible_lsb.release|float >= 16.04
+
+
+

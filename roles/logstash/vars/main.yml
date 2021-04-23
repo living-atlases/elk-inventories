@@ -1,0 +1,16 @@
+---
+logstash_filters:
+- file: "11-auditbeat-filter.conf"
+- file: "20-tomcat-filter.conf"
+- file: "21-cassandra-filter.conf"
+- file: "22-webapplog-filter.conf"
+- file: "23-ufw-filter.conf"
+- file: "25-catalina-filter.conf"
+- file: "26-solr-filter.conf"
+- file: "27-syslog-filter.conf"
+- file: "28-web_server-filter.conf"
+- file: "29-biocache_store-filter.conf"
+
+logstash_templated_filters:
+- file: "02-beats-input.conf"
+- file: "30-elasticsearch-output.conf"

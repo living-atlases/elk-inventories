@@ -1,0 +1,70 @@
+# ======================== ALA Elasticsearch Configuration =========================
+
+cluster.name: "{{ elasticsearch_cluster_name }}"
+
+node.name: "{{ elasticsearch_node_name }}"
+
+http.port: {{ elasticsearch_http_port }}
+
+network.host: {{ elasticsearch_node_ip }}
+
+cluster.initial_master_nodes:
+- {{ elasticsearch_node_ip  }}
+
+node.master: true
+node.data: true
+
+discovery.zen.minimum_master_nodes: {{ elasticsearch_minimum_master_nodes }}
+
+discovery.zen.ping.unicast.hosts: {{ elasticsearch_discovery_hosts }}
+
+gateway.recover_after_nodes: {{ elasticsearch_number_of_nodes }}
+
+gateway.expected_nodes: {{ elasticsearch_number_of_nodes }}
+
+indices.query.bool.max_clause_count: 2000
+
+path.data: {{ elasticsearch_data_path }}
+
+path.logs: {{ elasticsearch_logs_path }}
+
+# Require explicit names to delete
+action.destructive_requires_name: true
+
+xpack.security.enabled: {{ elasticsearch_security_enabled | lower }}
+
+xpack.security.transport.ssl.enabled: {{ elasticsearch_security_transport_ssl_enabled | lower }}
+{% if elasticsearch_security_transport_ssl_enabled %}
+xpack.security.transport.ssl.verification_mode: {{ elasticsearch_security_transport_ssl_verification_mode }}
+xpack.security.transport.ssl.keystore.path: {{ elasticsearch_security_transport_ssl_keystore_path }}
+xpack.security.transport.ssl.truststore.path: {{ elasticsearch_security_transport_ssl_truststore_path }}
+{% endif %}
+
+xpack.security.http.ssl.enabled: {{ elasticsearch_security_http_ssl_enabled | lower }}
+{% if elasticsearch_security_http_ssl_enabled %}
+xpack.security.http.ssl.verification_mode: {{ elasticsearch_security_http_ssl_verification_mode }}
+xpack.security.http.ssl.keystore.path: {{ elasticsearch_security_http_ssl_keystore_path }}
+xpack.security.http.ssl.truststore.path: {{ elasticsearch_security_http_ssl_truststore_path }}
+{% endif %}
+
+xpack.security.authc.realms.native.native1.order: 0
+
+#xpack.security.enabled: true
+
+#xpack.security.transport.ssl.enabled: true
+#xpack.security.transport.ssl.verification_mode: certificate
+#xpack.security.transport.ssl.keystore.path: certs/elastic-certificates.p12 
+#xpack.security.transport.ssl.truststore.path: certs/elastic-certificates.p12
+
+#xpack.security.http.ssl.enabled: true
+#xpack.security.http.ssl.keystore.path: certs/elastic-certificates.p12 
+#xpack.security.http.ssl.truststore.path: certs/elastic-certificates.p12 
+
+xpack.monitoring.collection.enabled: true
+# Must be the same time as monitoring.ui.collection.interval in kibana
+xpack.monitoring.collection.interval: 60s
+
+# https://www.elastic.co/guide/en/elasticsearch/reference/current/monitoring-settings.html#general-monitoring-settings
+xpack.monitoring.elasticsearch.collection.enabled: false
+
+action.auto_create_index: true

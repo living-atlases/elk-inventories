@@ -1,0 +1,20 @@
+elasticsearch_data_path: '/data/elasticsearch-data'
+elasticsearch_logs_path: '/data/elasticsearch-logs'
+elasticsearch_http_port: 9200
+# elasticsearch_discovery_hosts: ['host1', 'host2', 'host3']
+# elasticsearch_minimum_master_nodes: 
+# elasticsearch_number_of_nodes: 3
+# elasticsearch_cluster_name: 'my-application'
+# elasticsearch_node_name: 'host1'
+# elasticsearch_node_ip: '192.168.0.1'
+# elasticsearch_heap_size: 1g
+
+elasticsearch_security_enabled: false
+elasticsearch_security_transport_ssl_enabled: false
+elasticsearch_security_transport_ssl_verification_mode: "certificate"
+elasticsearch_security_transport_ssl_keystore_path: "/etc/elasticsearch/certs/elastic-certificates.p12"
+elasticsearch_security_transport_ssl_truststore_path: "/etc/elasticsearch/certs/elastic-certificates.p12"
+elasticsearch_security_http_ssl_enabled: false
+elasticsearch_security_http_ssl_verification_mode: "certificate"
+elasticsearch_security_http_ssl_keystore_path: "/etc/elasticsearch/certs/elastic-certificates.p12"
+elasticsearch_security_http_ssl_truststore_path: "/etc/elasticsearch/certs/elastic-certificates.p12"

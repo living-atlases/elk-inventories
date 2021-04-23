@@ -1,0 +1,14 @@
+{{ kibana_log_directory }}kibana.log
+{
+	rotate 7
+	daily
+	missingok
+	notifempty
+	delaycompress
+	compress
+        su {{ kibana_user }} {{ kibana_group }}
+        create 0660 {{ kibana_user }} {{ kibana_group }}
+	postrotate
+		service kibana restart
+	endscript
+}

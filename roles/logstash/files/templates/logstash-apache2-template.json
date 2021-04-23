@@ -1,0 +1,139 @@
+{
+  "index_patterns": [
+    "*beat-apache2-*"
+  ],
+  "version": 50001,
+  "settings": {
+    "index": {
+      "lifecycle" : {
+        "name" : "apache2-removal-policy"
+      },
+      "mapping.total_fields.limit": 10000,
+      "refresh_interval": "5s",
+      "number_of_shards": "1",
+      "auto_expand_replicas": "0-1",
+      "codec": "best_compression",
+      "query.default_field":["httpd.access.url_params.q", "httpd.access.url_params.fq"]
+    }
+  },
+  "mappings": {
+      "numeric_detection": true,
+      "dynamic_templates": [{
+        "url_params_q_text": {
+          "path_match": "httpd.access.url_params.q",
+          "mapping": {
+            "dynamic": "strict",
+            "type": "text"
+          }
+        }
+      }, {
+        "url_params_fq_text": {
+          "path_match": "httpd.access.url_params.fq",
+          "mapping": {
+            "dynamic": "strict",
+            "type": "text"
+          }
+        }
+      }, {
+        "long_as_double": {
+          "match_mapping_type": "long",
+          "mapping": {
+            "type": "double"
+          }
+        }
+      }],
+      "properties": {
+        "httpd.access.url_params.ver": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.id": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.geoip.postal_code": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.species_lsid": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.projectId": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.zoom": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.userName": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.spotterId": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.pcolour": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.geoip.region_code": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        }
+      }
+  },
+  "aliases": {}
+}

@@ -1,0 +1,12 @@
+kibana_server_port: 5601
+kibana_context_path: "/"
+
+kibana_user: kibana
+kibana_group: kibana
+
+kibana_log_directory: /var/log/kibana/
+
+kibana_max_payload_bytes: 104857600
+
+kibana_security_enabled: False
+kibana_security_audit_enabled: False

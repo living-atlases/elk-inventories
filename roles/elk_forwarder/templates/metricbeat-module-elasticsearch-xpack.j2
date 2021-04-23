@@ -1,0 +1,35 @@
+# Module: elasticsearch
+# Docs: https://www.elastic.co/guide/en/beats/metricbeat/7.10/metricbeat-module-elasticsearch.html
+
+{% if metricbeat_elasticsearch_enabled is defined and metricbeat_elasticsearch_enabled|bool == True %}
+- module: elasticsearch
+  metricsets:
+    - ccr
+    - cluster_stats
+    - enrich
+    - index
+    - index_recovery
+    - index_summary
+    - ml_job
+    - node
+    - node_stats
+    - pending_tasks
+    - shard
+  xpack.enabled: true
+  period: 60s
+  hosts: ["{{ logstash_elasticsearch_url }}:9200"]
+  scope: node
+  {% if elasticsearch_security_enabled | bool == True %}
+  username: "{{ metricbeat_elasticsearch_monitoring_username }}"
+  password: "{{ metricbeat_elasticsearch_monitoring_password }}"
+  {% endif %}
+
+  ssl:
+    enabled: {{ elasticsearch_security_enabled | lower }}
+    {% if elasticsearch_security_enabled | bool == True %}
+    certificateAuthorities: [ "/etc/metricbeat/certs/public/client-ca.cer" ]
+    verification_mode: none
+    {% endif %}
+{% else %}
+# Elasticsearch module disabled for this metricbeat instance
+{% endif %}

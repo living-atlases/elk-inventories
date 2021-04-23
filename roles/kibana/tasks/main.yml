@@ -1,0 +1,74 @@
+
+
+- name: add apt key for elastic
+  apt_key: url="https://artifacts.elastic.co/GPG-KEY-elasticsearch" state=present
+  notify: restart kibana
+  tags:
+    - kibana
+
+- name: add elastic {{ es_major_version }} apt source list
+  copy: content="deb https://artifacts.elastic.co/packages/{{ es_major_version }}/apt stable main" dest="/etc/apt/sources.list.d/elastic-7.x.list"
+  notify: restart kibana
+  tags:
+    - kibana
+
+- name: install openjdk 8 java
+  apt: pkg=openjdk-8-jdk state=latest update_cache=yes
+  notify: restart kibana
+  tags:
+    - kibana
+
+- name: install kibana
+  apt: name="kibana{{ '-oss' if oss_version is defined and oss_version | bool == True else '' }}={{ kibana_version }}"
+  notify: restart kibana
+  tags:
+    - kibana
+
+- name: install logrotate
+  apt: name="logrotate" state=latest
+  notify: restart kibana
+  tags:
+    - kibana
+
+- name: copy elasticsearch ca cert
+  copy: src="files/client-ca.cer" dest="/etc/kibana/client-ca.cer" owner="root" group="{{ kibana_group }}" mode=0640
+  notify:
+    - restart logstash
+  when: kibana_security_enabled | bool == True
+
+- name: setup kibana.yml
+  template:
+    src: "kibana.yml.j2"
+    dest: "/etc/kibana/kibana.yml"
+    owner: "root"
+    group: "{{ kibana_group }}"
+    mode: 0640
+    backup: yes
+  notify: restart kibana
+  tags:
+    - kibana
+    - properties
+
+- name: kibana create log directory
+  file:
+    path: "{{ kibana_log_directory }}"
+    mode: 0750
+    owner: "{{ kibana_user }}"
+    group: "{{ kibana_group }}"
+    state: directory
+  notify: restart kibana
+  become: yes
+  tags:
+    - kibana
+
+- name: kibana setup logrotate
+  template:
+    src: logrotate-kibana
+    dest: /etc/logrotate.d/kibana
+    owner: root
+    group: root
+    mode: 0644
+  notify: restart kibana
+  tags:
+    - kibana
+

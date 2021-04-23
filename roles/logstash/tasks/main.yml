@@ -1,0 +1,206 @@
+
+
+- name: add apt key for elastic
+  apt_key: url="https://artifacts.elastic.co/GPG-KEY-elasticsearch" state=present
+  notify:
+    - restart logstash
+
+- name: add elastic {{ es_major_version }} apt source list
+  copy: content="deb https://artifacts.elastic.co/packages/{{ es_major_version }}/apt stable main" dest="/etc/apt/sources.list.d/elastic-7.x.list"
+  notify:
+    - restart logstash
+
+# https://github.com/maxmind/geoipupdate#installing-on-ubuntu-via-ppa
+- name: install maxmind geoip apt repository
+  apt_repository:
+    repo: 'ppa:maxmind/ppa'
+    state: present
+
+- name: install openjdk 8 java
+  apt: pkg=openjdk-8-jdk state=latest update_cache=yes
+  notify:
+    - restart logstash
+
+- name: install logstash
+  apt: name="logstash{{ '-oss' if oss_version is defined and oss_version | bool == True else '' }}={{ logstash_version }}"
+  notify:
+    - restart logstash
+
+- name: install geoipupdate
+  apt: name="geoipupdate" state=latest
+#  notify:
+#    - restart logstash
+
+- name: Configure geoipupdate
+  template:
+    src: geoipupdate.conf.j2
+    dest: "{{ maxmind_geoip_conf }}"
+    owner: root
+    group: root
+    mode: 0740
+  register: geoipupdate_conf
+  tags:
+    - geoip
+
+- name: enable cron job for downloading the latest geoip database
+  cron:
+    name: "download latest geoip database"
+    minute: "30"
+    hour: "08"
+    job: "/usr/bin/geoipupdate --config-file {{ maxmind_geoip_conf }} --database-directory {{ maxmind_geoip_database_directory }}"
+    state: present
+  tags:
+    - geoip
+
+- name: check pki certs directory exists
+  file: path="{{ item }}" state=directory owner=root group=logstash mode=0750
+  with_items:
+    - "/etc/logstash/certs/"
+    - "/etc/logstash/certs/public/"
+    - "/etc/logstash/certs/private/"
+  notify:
+    - restart logstash
+
+- name: copy logstash index templates
+  copy:
+    src: "{{ item }}"
+    dest: /etc/logstash/templates/
+    owner: "root" 
+    group: "root" 
+    mode: 0644
+  with_fileglob: "files/templates/logstash-*-template.json"
+  notify:
+    - restart logstash
+
+- name: copy pki cert
+  copy: src="files/pki/logstash-forwarder.crt" dest="/etc/logstash/certs/public/logstash-forwarder.crt" owner="logstash" group="logstash" mode=0640
+  notify:
+    - restart logstash
+  when: logstash_ssl_enabled | bool == True
+
+- name: copy pki cert for elk-sc
+  copy: src="files/pki/logstash-forwarder-elk-sc.crt" dest="/etc/logstash/certs/public/logstash-forwarder-elk-sc.crt" owner="logstash" group="logstash" mode=0640
+  notify:
+    - restart logstash
+  when: logstash_ssl_enabled | bool == True
+
+- name: copy pki key
+  copy: src="files/pki/logstash-forwarder.key" dest="/etc/logstash/certs/private/logstash-forwarder.key" owner="logstash" group="logstash" mode=0600
+  notify:
+    - restart logstash
+  when: logstash_ssl_enabled | bool == True
+
+- name: copy elasticsearch ca cert
+  copy: src="files/pki/client-ca.cer" dest="/etc/logstash/certs/public/client-ca.cer" owner="root" group="logstash" mode=0640
+  notify:
+    - restart logstash
+  when: logstash_ssl_enabled | bool == True
+
+- name: copy elasticsearch truststore
+  copy: src="files/pki/elastic-certificates.p12" dest="{{ logstash_elasticsearch_truststore }}" owner="logstash" group="logstash" mode=0640
+  notify:
+    - restart logstash
+  when: logstash_ssl_enabled | bool == True
+
+- name: copy beats client pkcs8 key
+  copy: src="files/pki/beats-client-pkcs8.key" dest="/etc/logstash/certs/private/beats-client-pkcs8.key" owner="root" group="logstash" mode=0640
+  notify:
+    - restart logstash
+  when: logstash_ssl_enabled | bool == True
+
+- name: copy beats client crt
+  copy: src="files/pki/beats-client.crt" dest="/etc/logstash/certs/public/beats-client.crt" owner="root" group="logstash" mode=0640
+  notify:
+    - restart logstash
+  when: logstash_ssl_enabled | bool == True
+
+- name: logstash config - set heap min
+  lineinfile: >
+    dest="/etc/logstash/jvm.options"
+    line="-Xms{{ logstash_heap_size }}"
+    regexp="^-Xms"
+    state=present
+  notify:
+    - restart logstash
+  when: 0 > 1 # disabled waiting for new server specs
+
+- name: logstash config - set heap max
+  lineinfile: >
+    dest="/etc/logstash/jvm.options"
+    line="-Xmx{{ logstash_heap_size }}"
+    regexp="^-Xmx"
+    state=present
+  notify:
+    - restart logstash
+  when: 0 > 1 # disabled waiting for new server specs
+
+- name: logstash config - disable heap dump on oom
+  lineinfile: >
+    dest="/etc/logstash/jvm.options"
+    line="-XX:+HeapDumpOnOutOfMemoryError"
+    state=absent
+  notify:
+    - restart logstash
+
+- name: logstash config - remove duplicate lines
+  lineinfile: >
+    dest="/etc/logstash/jvm.options"
+    line="#-XX:+HeapDumpOnOutOfMemoryError"
+    state=absent
+  notify:
+    - restart logstash
+  when: 0 > 1 # disabled waiting for new server specs
+
+- name: logstash config - add processing files (filters, output)
+  copy: src="files/filters/{{ item.file }}" dest="/etc/logstash/conf.d/" owner="root" group="logstash" mode=0640
+  with_items:
+    - "{{ logstash_filters }}"
+  notify:
+    - restart logstash
+  tags:
+    - properties
+
+- name: logstash config - add templated filters
+  template: src="filters/{{ item.file }}" dest="/etc/logstash/conf.d/" owner="root" group="logstash" mode=0640
+  with_items:
+    - "{{ logstash_templated_filters }}"
+  notify:
+    - restart logstash
+  tags:
+    - properties
+
+- name: check data directory exists
+  file: path="{{ logstash_data_dir }}" state=directory owner=logstash group=logstash mode=0750
+  notify:
+    - restart logstash
+
+- name: logstash config - set path.data
+  lineinfile: >
+    dest="/etc/logstash/logstash.yml"
+    line="path.data: {{ logstash_data_dir }}"
+    regexp="^path.data:"
+    state=present
+  notify:
+    - restart logstash
+  tags:
+    - properties
+
+- name: logstash config - set queue.type
+  lineinfile: >
+    dest="/etc/logstash/logstash.yml"
+    line="queue.type: {{ logstash_queue_type }}"
+    regexp="^queue.type:"
+    state=present
+  notify:
+    - restart logstash
+
+- name: logstash config - set queue.max_bytes
+  lineinfile: >
+    dest="/etc/logstash/logstash.yml"
+    line="queue.max_bytes: {{ logstash_queue_max_bytes }}"
+    regexp="^queue.max_bytes:"
+    state=present
+  notify:
+    - restart logstash
+
+

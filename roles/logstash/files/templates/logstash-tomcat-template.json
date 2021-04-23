@@ -1,0 +1,30 @@
+{
+  "index_patterns": [
+    "*beat-tomcat-*"
+  ],
+  "version": 50007,
+  "settings": {
+    "index": {
+      "lifecycle" : {
+        "name" : "tomcat-removal-policy"
+      },
+      "mapping.total_fields.limit": 10000,
+      "refresh_interval": "5s",
+      "number_of_shards": "1",
+      "auto_expand_replicas": "0-1",
+      "codec": "best_compression"
+    }
+  },
+  "mappings": {
+      "numeric_detection": true,
+      "dynamic_templates": [{
+        "long_as_double": {
+          "match_mapping_type": "long",
+          "mapping": {
+            "type": "double"
+          }
+        }
+      }]
+  },
+  "aliases": {}
+}

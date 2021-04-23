@@ -1,0 +1,676 @@
+{
+  "index_patterns": [
+    "*beat-nginx-*"
+  ],
+  "version": 50004,
+  "settings": {
+    "index": {
+      "lifecycle" : {
+        "name" : "nginx-removal-policy"
+      },
+      "mapping.total_fields.limit": 10000,
+      "refresh_interval": "5s",
+      "number_of_shards": "2",
+      "auto_expand_replicas": "0-1",
+      "codec": "best_compression",
+      "query.default_field":["httpd.access.url_params.q", "httpd.access.url_params.fq"]
+    }
+  },
+  "mappings": {
+      "numeric_detection": true,
+      "dynamic_templates": [{
+        "url_params_underscore_text": {
+          "path_match": "httpd.access.url_params._",
+          "mapping": {
+            "dynamic": "strict",
+            "type": "text"
+          }
+        }
+      }, {
+        "error_url_params_underscore_text": {
+          "path_match": "httpd.error.object.request.url_params._",
+          "mapping": {
+            "dynamic": "strict",
+            "type": "text"
+          }
+        }
+      }, {
+        "url_params_q_op_text": {
+          "path_match": "httpd.access.url_params.q.op",
+          "mapping": {
+            "dynamic": "strict",
+            "type": "text"
+          }
+        }
+      }, {
+        "url_params_q_text": {
+          "path_match": "httpd.access.url_params.q",
+          "mapping": {
+            "dynamic": "strict",
+            "type": "text"
+          }
+        }
+      }, {
+        "url_params_fq_text": {
+          "path_match": "httpd.access.url_params.fq",
+          "mapping": {
+            "dynamic": "strict",
+            "type": "text"
+          }
+        }
+      }, {
+        "url_params_type_text": {
+          "path_match": "httpd.access.url_params.type",
+          "mapping": {
+            "dynamic": "strict",
+            "type": "text"
+          }
+        }
+      }, {
+        "url_params_f_text": {
+          "path_match": "httpd.access.url_params.f",
+          "mapping": {
+            "dynamic": "strict",
+            "type": "text"
+          }
+        }
+      }, {
+        "url_params_v_text": {
+          "path_match": "httpd.access.url_params.v",
+          "mapping": {
+            "dynamic": "strict",
+            "type": "text"
+          }
+        }
+      }, {
+        "url_params_s_text": {
+          "path_match": "httpd.access.url_params.s",
+          "mapping": {
+            "dynamic": "strict",
+            "type": "text"
+          }
+        }
+      }, {
+        "url_params_imageId_text": {
+          "path_match": "httpd.access.url_params.imageId",
+          "mapping": {
+            "dynamic": "strict",
+            "type": "text"
+          }
+        }
+      }, {
+        "url_params_count_text": {
+          "path_match": "httpd.access.url_params.count",
+          "mapping": {
+            "dynamic": "strict",
+            "type": "text"
+          }
+        }
+      }, {
+        "long_as_double": {
+          "match_mapping_type": "long",
+          "mapping": {
+            "type": "double"
+          }
+        }
+      }],
+      "properties": {
+        "httpd.error.object.geoip.location": {
+          "type": "geo_point"
+        },
+        "httpd.access.geoip.location": {
+          "type": "geo_point"
+        },
+        "httpd.access.url_params.workflow": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.v": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.r": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.page": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.mode": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.limit": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.from": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.c": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.items%5B2%5D%5Bcolor%5D": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.max": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.offset": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.lat": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.lon": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.ver": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params._": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.id": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.dir": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.taskId": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.patch": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.count": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.imageId": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.userId": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.f": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.fq": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.q": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.date": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.after": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.amp;endDate": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.amp;fromDate": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.amp;startDate": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.amp;toDate": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.compareDates%5B%5D": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.createdBefore": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.dateUploadedYearMonth": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.endDate": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.financialYearEndDate": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.lastUpdatedBefore": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.periodEnd": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.plannedEndDate": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.plannedStartDate": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.post_start_date": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.startDate": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.error.object.request.url_params.amp;fromDate": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.error.object.request.url_params.amp;toDate": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.error.object.request.url_params.endDate": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.error.object.request.url_params.fromDate": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.error.object.request.url_params.lastUpdatedBefore": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.error.object.request.url_params.startDate": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.error.object.request.url_params.toDate": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.geoip.postal_code": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.error.object.geoip.postal_code": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.geoip.region_code": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.error.object.geoip.region_code": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.projectId": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.error.object.request.url_params.projectId": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.role": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.species_lsid": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.zoom": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.userName": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.spotterId": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "httpd.access.url_params.pcolour": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        }
+    }
+  },
+  "aliases": {}
+}

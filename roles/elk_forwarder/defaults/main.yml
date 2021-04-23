@@ -1,0 +1,54 @@
+la_webserver: False
+la_tomcat7_logfiles: False
+la_tomcat8_logfiles: False
+la_java_logfiles: False
+
+##### Filebeat
+
+filebeat_enabled: False
+
+# Available log levels are: error, warning, info, debug
+filebeat_logging_level: "warning"
+
+##### Metricbeat
+
+metricbeat_enabled: False
+
+# Available log levels are: error, warning, info, debug
+metricbeat_logging_level: "warning"
+
+# Set the following to true to monitor kibana using metricbeat
+# https://www.elastic.co/guide/en/kibana/7.10/monitoring-metricbeat.html
+metricbeat_kibana_enabled: False
+
+# Set the following to true to monitor elasticsearch using metricbeat
+# https://www.elastic.co/guide/en/beats/metricbeat/7.10/metricbeat-module-elasticsearch.html
+metricbeat_elasticsearch_enabled: False
+
+# Set to false to disable the metricbeat system module
+metricbeat_system_enabled: True
+
+##### Packetbeat
+
+packetbeat_enabled: False
+
+# Available log levels are: error, warning, info, debug
+packetbeat_logging_level: "warning"
+
+# Enable this to track packet flows.
+# This generates very large logs, so only do it to debug specific issues
+packetbeat_flows_enabled: False
+
+# Enable this to track ICMP packets using packetbeat.
+packetbeat_icmp_enabled: False
+
+##### Auditbeat
+
+auditbeat_enabled: False
+
+# Available log levels are: error, warning, info, debug
+auditbeat_logging_level: "debug"
+
+auditbeat_module_system_socket_enabled: False
+
+auditbeat_processor_dns_enabled: False

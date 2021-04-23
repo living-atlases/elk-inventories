@@ -1,0 +1,36 @@
+# logstash_heap_size: 1g
+
+logstash_data_dir: /data/logstash
+
+logstash_queue_type: persisted
+
+logstash_queue_max_bytes: 10gb
+
+# Maxmind is the company providing the geoip database that logstash uses to geolocate IP addresses and identify ASNs
+
+maxmind_license_key: "XXXXXX"
+
+maxmind_account_id: "XXXX"
+
+maxmind_edition_ids: ["GeoLite2-ASN", "GeoLite2-City", "GeoLite2-Country"]
+
+maxmind_geoip_conf: "/etc/GeoIP.conf"
+
+maxmind_geoip_database_directory: "/usr/share/GeoIP"
+
+logstash_ssl_enabled: true
+
+# FIXME: Temporarily off until we can get the CA chain verification working. 
+# Unlike kibana and elasticsearch, logstash doesn't currently seem offer "certificate" only verification, just "host" or "none"
+logstash_ssl_certificate_verification: false
+
+logstash_elasticsearch_cacert: "/etc/logstash/certs/public/client-ca.cer"
+logstash_elasticsearch_truststore: "/etc/logstash/certs/private/elastic-certificates.p12"
+
+logstash_beats_client_pkcs8_key: "/etc/logstash/certs/private/beats-client-pkcs8.key"
+logstash_beats_client_certificate: "/etc/logstash/certs/public/beats-client.crt"
+
+# The following all need to be configured for each case:
+#logstash_elasticsearch_url: "https://example:9200"
+#logstash_elasticsearch_username="logstash_internal"
+#logstash_elasticsearch_password="not-your-password"

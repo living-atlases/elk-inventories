@@ -1,0 +1,70 @@
+{
+  "index_patterns": [
+    "*beat-syslog-*"
+  ],
+  "version": 50006,
+  "settings": {
+    "index": {
+      "lifecycle" : {
+        "name" : "syslog-removal-policy"
+      },
+      "mapping.total_fields.limit": 10000,
+      "refresh_interval": "5s",
+      "number_of_shards": "1",
+      "auto_expand_replicas": "0-1",
+      "codec": "best_compression"
+    }
+  },
+  "mappings": {
+      "numeric_detection": true,
+      "dynamic_templates": [{
+        "region_postal_code": {
+          "path_match": "*.geoip.*_code",
+          "mapping": {
+            "numeric_detection": false,
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword",
+                "ignore_above": 256
+              }
+            }
+          }
+        }
+      }, {
+        "long_as_double": {
+          "match_mapping_type": "long",
+          "mapping": {
+            "type": "double"
+          }
+        }
+      }],
+      "properties": {
+        "system.auth.ssh.geoip.location": {
+          "type": "geo_point"
+        },
+        "system.syslog.f2b.source.geoip.location": {
+          "type": "geo_point"
+        },
+        "system.auth.user": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "system.auth.sudo.user": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        }
+      }
+  },
+  "aliases": {}
+}

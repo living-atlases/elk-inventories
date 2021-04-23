@@ -1,0 +1,5 @@
+---
+- hosts: elk_forwarder
+  roles:
+  - elk_forwarder
+  become: yes

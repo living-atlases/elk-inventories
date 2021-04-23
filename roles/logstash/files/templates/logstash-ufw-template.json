@@ -1,0 +1,114 @@
+{
+  "index_patterns": [
+    "*beat-ufw*"
+  ],
+  "version": 50004,
+  "settings": {
+    "index": {
+      "lifecycle" : {
+        "name" : "ufw-removal-policy"
+      },
+      "mapping.total_fields.limit": 10000,
+      "refresh_interval": "5s",
+      "number_of_shards": "1",
+      "auto_expand_replicas": "0-1",
+      "codec": "best_compression"
+    }
+  },
+  "mappings": {
+      "numeric_detection": true,
+      "dynamic_templates": [
+        {
+          "long_as_double": {
+            "match_mapping_type": "long",
+            "mapping": {
+              "type": "double"
+            }
+          }
+        }
+      ],
+      "properties": {
+        "ufw.timestamp": {
+          "type": "date"
+        },
+        "ufw.kernel_timestamp": {
+          "type": "double"
+        },
+        "@version": {
+          "type": "keyword"
+        },
+        "ufw.host": {
+          "type": "keyword"
+        },
+        "ufw.adapter": {
+          "type": "keyword"
+        },
+        "ufw.src_ip": {
+          "type": "ip"
+        },
+        "ufw.src_mac": {
+          "type": "keyword"
+        },
+        "ufw.dst_mac": {
+          "type": "keyword"
+        },
+        "ufw.ethertype": {
+          "type": "keyword"
+        },
+        "ufw.dst_ip": {
+          "type": "ip"
+        },
+        "ufw.packet_details": {
+          "type": "text"
+        },
+        "ufw.mac_appendix_one": {
+          "type": "text"
+        },
+        "ufw.mac_appendix_two": {
+          "type": "text"
+        },
+        "ufw.src_geoip.location": {
+          "type": "geo_point"
+        },
+        "ufw.dst_geoip.location": {
+          "type": "geo_point"
+        },
+        "ufw.src_geoip.region_code": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "ufw.src_geoip.postal_code": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "ufw.dst_geoip.region_code": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "ufw.dst_geoip.postal_code": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        }
+      }
+  }
+}

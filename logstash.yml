@@ -1,0 +1,5 @@
+---
+- hosts: logstash
+  roles:
+  - logstash
+  become: yes

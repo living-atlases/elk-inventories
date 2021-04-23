@@ -1,0 +1,4 @@
+roles/logstash/files/pki/*
+roles/elk_forwarder/files/*
+roles/elasticsearch/files/*
+roles/kibana/files/*

@@ -1,0 +1,31 @@
+{
+  "index_patterns": [
+    "*beat-solr-*"
+  ],
+  "version": 50005,
+  "settings": {
+    "index": {
+      "lifecycle" : {
+        "name" : "solr-removal-policy"
+      },
+      "mapping.total_fields.limit": 10000,
+      "refresh_interval": "5s",
+      "number_of_shards": "4",
+      "auto_expand_replicas": "0-1",
+      "codec": "best_compression",
+      "query.default_field":["log.solr.query.parameters.q"]
+    }
+  },
+  "mappings": {
+      "numeric_detection": true,
+      "dynamic_templates": [{
+        "long_as_double": {
+          "match_mapping_type": "long",
+          "mapping": {
+            "type": "double"
+          }
+        }
+      }]
+  },
+  "aliases": {}
+}

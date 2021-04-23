@@ -1,0 +1,766 @@
+# issue #157 : DNS resolution broke, which stopped logs from being sent to elk host
+- name: "Hardcode elk host DNS entry to allow for log analysis when DNS resolution is broken"
+  blockinfile:
+    path: "/etc/hosts"
+    marker: '# {mark} Hardcoded IP address (Ansible managed by elk_forwarder role)'
+    block: |
+        10.20.20.134     nbn-elk-1
+  become: yes
+  register: dns_entry
+  when:
+    - filebeat_enabled | bool == True or metricbeat_enabled | bool == True or packetbeat_enabled | bool == True
+  tags:
+    - elk_forwarder
+
+- name: add apt key for elastic
+  apt_key: url="https://artifacts.elastic.co/GPG-KEY-elasticsearch" state=present
+  register: apt_key
+  when:
+    - filebeat_enabled | bool == True or metricbeat_enabled | bool == True or packetbeat_enabled | bool == True
+  tags:
+    - elk_forwarder
+
+- name: add elastic 7 apt source list
+  copy: content="deb https://artifacts.elastic.co/packages/{{ es_major_version }}/apt stable main" dest="/etc/apt/sources.list.d/elastic-{{ es_major_version }}.list"
+  register: apt_source
+  when:
+    - filebeat_enabled | bool == True or metricbeat_enabled | bool == True or packetbeat_enabled | bool == True
+  tags:
+    - elk_forwarder
+
+- name: Install python-apt when necessary
+  apt:
+    name: python-apt
+  when: ansible_python.version.major==2
+  tags:
+    - elk_forwarder
+
+- name: Install python3-apt when necessary
+  apt:
+    name: python3-apt
+  when: ansible_python.version.major==3
+  tags:
+    - elk_forwarder
+
+- name: Gather package facts
+  package_facts:
+    manager: apt
+  tags:
+    - elk_forwarder
+
+- name: unhold filebeat
+  command: apt-mark unhold filebeat
+  when: '"filebeat" in ansible_facts.packages'
+  tags:
+    - elk_forwarder
+
+- name: unhold metricbeat
+  command: apt-mark unhold metricbeat
+  when: '"metricbeat" in ansible_facts.packages'
+  tags:
+    - elk_forwarder
+
+- name: unhold packetbeat
+  command: apt-mark unhold packetbeat
+  when: '"packetbeat" in ansible_facts.packages'
+  tags:
+    - elk_forwarder
+
+- name: unhold auditbeat
+  command: apt-mark unhold auditbeat
+  when: '"auditbeat" in ansible_facts.packages'
+  tags:
+    - elk_forwarder
+
+- name: remove filebeat
+  apt: name="filebeat" state=absent purge=yes
+  ignore_errors: yes
+  when:
+    - filebeat_enabled | bool == False
+  tags:
+    - elk_forwarder
+
+- name: remove metricbeat
+  apt: name="metricbeat" state=absent purge=yes
+  ignore_errors: yes
+  when:
+    - metricbeat_enabled | bool == False
+  tags:
+    - elk_forwarder
+
+- name: remove packetbeat
+  apt: name="packetbeat" state=absent purge=yes
+  ignore_errors: yes
+  when:
+    - packetbeat_enabled | bool == False
+  tags:
+    - elk_forwarder
+
+- name: remove auditbeat
+  apt: name="auditbeat" state=absent purge=yes
+  ignore_errors: yes
+  when:
+    - auditbeat_enabled | bool == False
+  tags:
+    - elk_forwarder
+
+- name: disable filebeat service
+  service:
+    name: "filebeat"
+    state: stopped
+    enabled: no
+  become: yes
+  ignore_errors: yes
+  when:
+    - filebeat_enabled | bool == False
+  tags:
+    - elk_forwarder
+
+- name: disable metricbeat service
+  service:
+    name: "metricbeat"
+    state: stopped
+    enabled: no
+  become: yes
+  ignore_errors: yes
+  when:
+    - metricbeat_enabled | bool == False
+  tags:
+    - elk_forwarder
+
+- name: disable packetbeat service
+  service:
+    name: "packetbeat"
+    state: stopped
+    enabled: no
+  become: yes
+  ignore_errors: yes
+  when:
+    - packetbeat_enabled | bool == False
+  tags:
+    - elk_forwarder
+
+- name: disable auditbeat service
+  service:
+    name: "auditbeat"
+    state: stopped
+    enabled: no
+  become: yes
+  ignore_errors: yes
+  when:
+    - auditbeat_enabled | bool == False
+  tags:
+    - elk_forwarder
+
+- name: Get running filebeat processes
+  shell: "ps -ef | grep -v grep | grep -w filebeat | awk '{print $2}'"
+  register: running_filebeat_processes
+  when:
+    - filebeat_enabled | bool == False
+  tags:
+    - elk_forwarder
+
+- name: Kill running filebeat processes
+  shell: "kill {{ item }}"
+  with_items: "{{ running_filebeat_processes.stdout_lines }}"
+  ignore_errors: yes
+  when:
+    - filebeat_enabled | bool == False
+  tags:
+    - elk_forwarder
+
+- wait_for:
+    path: "/proc/{{ item }}/status"
+    state: absent
+  with_items: "{{ running_filebeat_processes.stdout_lines }}"
+  ignore_errors: yes
+  register: killed_filebeat_processes
+  when:
+    - filebeat_enabled | bool == False
+  tags:
+    - elk_forwarder
+
+- name: Force kill stuck filebeat processes
+  shell: "kill -9 {{ item }}"
+  with_items: "{{ killed_filebeat_processes.results | select('failed') | map(attribute='item') | list }}"
+  ignore_errors: yes
+  when:
+    - filebeat_enabled | bool == False
+  tags:
+    - elk_forwarder
+
+- name: Get running metricbeat processes
+  shell: "ps -ef | grep -v grep | grep -w metricbeat | awk '{print $2}'"
+  register: running_metricbeat_processes
+  when:
+    - metricbeat_enabled | bool == False
+  tags:
+    - elk_forwarder
+
+- name: Kill running metricbeat processes
+  shell: "kill {{ item }}"
+  with_items: "{{ running_metricbeat_processes.stdout_lines }}"
+  ignore_errors: yes
+  when:
+    - metricbeat_enabled | bool == False
+  tags:
+    - elk_forwarder
+
+- wait_for:
+    path: "/proc/{{ item }}/status"
+    state: absent
+  with_items: "{{ running_metricbeat_processes.stdout_lines }}"
+  ignore_errors: yes
+  register: killed_metricbeat_processes
+  when:
+    - metricbeat_enabled | bool == False
+  tags:
+    - elk_forwarder
+
+- name: Force kill stuck metricbeat processes
+  shell: "kill -9 {{ item }}"
+  with_items: "{{ killed_metricbeat_processes.results | select('failed') | map(attribute='item') | list }}"
+  ignore_errors: yes
+  when:
+    - metricbeat_enabled | bool == False
+  tags:
+    - elk_forwarder
+
+- name: Get running packetbeat processes
+  shell: "ps -ef | grep -v grep | grep -w packetbeat | awk '{print $2}'"
+  register: running_packetbeat_processes
+  when:
+    - packetbeat_enabled | bool == False
+  tags:
+    - elk_forwarder
+
+- name: Kill running packetbeat processes
+  shell: "kill {{ item }}"
+  with_items: "{{ running_packetbeat_processes.stdout_lines }}"
+  ignore_errors: yes
+  when:
+    - packetbeat_enabled | bool == False
+  tags:
+    - elk_forwarder
+
+- wait_for:
+    path: "/proc/{{ item }}/status"
+    state: absent
+  with_items: "{{ running_packetbeat_processes.stdout_lines }}"
+  ignore_errors: yes
+  register: killed_packetbeat_processes
+  when:
+    - packetbeat_enabled | bool == False
+  tags:
+    - elk_forwarder
+
+- name: Force kill stuck packetbeat processes
+  shell: "kill -9 {{ item }}"
+  with_items: "{{ killed_packetbeat_processes.results | select('failed') | map(attribute='item') | list }}"
+  ignore_errors: yes
+  when:
+    - packetbeat_enabled | bool == False
+  tags:
+    - elk_forwarder
+
+- name: Get running auditbeat processes
+  shell: "ps -ef | grep -v grep | grep -w auditbeat | awk '{print $2}'"
+  register: running_auditbeat_processes
+  when:
+    - auditbeat_enabled | bool == False
+  tags:
+    - elk_forwarder
+
+- name: Kill running auditbeat processes
+  shell: "kill {{ item }}"
+  with_items: "{{ running_auditbeat_processes.stdout_lines }}"
+  ignore_errors: yes
+  when:
+    - auditbeat_enabled | bool == False
+  tags:
+    - elk_forwarder
+
+- wait_for:
+    path: "/proc/{{ item }}/status"
+    state: absent
+  with_items: "{{ running_auditbeat_processes.stdout_lines }}"
+  ignore_errors: yes
+  register: killed_auditbeat_processes
+  when:
+    - auditbeat_enabled | bool == False
+  tags:
+    - elk_forwarder
+
+- name: Force kill stuck auditbeat processes
+  shell: "kill -9 {{ item }}"
+  with_items: "{{ killed_auditbeat_processes.results | select('failed') | map(attribute='item') | list }}"
+  ignore_errors: yes
+  when:
+    - auditbeat_enabled | bool == False
+  tags:
+    - elk_forwarder
+
+- name: install filebeat
+  apt: name="filebeat{{ '-oss' if oss_version is defined and oss_version | bool == True else '' }}={{ beats_version }}" update_cache=yes
+  when:
+    - filebeat_enabled | bool == True
+  ignore_errors: yes
+  notify: 
+    - restart filebeat
+  tags:
+    - elk_forwarder
+
+- name: install metricbeat
+  apt: name="metricbeat{{ '-oss' if oss_version is defined and oss_version | bool == True else '' }}={{ beats_version }}" update_cache=yes
+  when:
+    - metricbeat_enabled | bool == True
+  ignore_errors: yes
+  notify: 
+    - restart metricbeat
+  tags:
+    - elk_forwarder
+
+- name: install packetbeat
+  apt: name="packetbeat{{ '-oss' if oss_version is defined and oss_version | bool == True else '' }}={{ beats_version }}" update_cache=yes
+  when:
+    - packetbeat_enabled | bool == True
+  ignore_errors: yes
+  notify: 
+    - restart packetbeat
+  tags:
+    - elk_forwarder
+
+- name: install auditbeat
+  apt: name="auditbeat{{ '-oss' if oss_version is defined and oss_version | bool == True else '' }}={{ beats_version }}" update_cache=yes
+  when:
+    - auditbeat_enabled | bool == True
+  ignore_errors: yes
+  notify: 
+    - restart auditbeat
+  tags:
+    - elk_forwarder
+
+- name: create filebeat certs directories
+  file: path="{{ item }}" state=directory owner=root group=root mode=0750
+  with_items:
+    - "/etc/filebeat/certs/"
+    - "/etc/filebeat/certs/public/"
+    - "/etc/filebeat/certs/private/"
+  when:
+    - filebeat_enabled | bool == True
+    - logstash_ssl_enabled | bool == True
+  notify:
+    - restart filebeat
+  tags:
+    - elk_forwarder
+
+- name: create metricbeat certs directories
+  file: path="{{ item }}" state=directory owner=root group=root mode=0750
+  with_items:
+    - "/etc/metricbeat/certs/"
+    - "/etc/metricbeat/certs/public/"
+    - "/etc/metricbeat/certs/private/"
+  when:
+    - metricbeat_enabled | bool == True
+    - logstash_ssl_enabled | bool == True
+  notify:
+    - restart metricbeat
+  tags:
+    - elk_forwarder
+
+- name: create packetbeat certs directories
+  file: path="{{ item }}" state=directory owner=root group=root mode=0750
+  with_items:
+    - "/etc/packetbeat/certs/"
+    - "/etc/packetbeat/certs/public/"
+    - "/etc/packetbeat/certs/private/"
+  when:
+    - packetbeat_enabled | bool == True
+    - logstash_ssl_enabled | bool == True
+  notify:
+    - restart packetbeat
+  tags:
+    - elk_forwarder
+
+- name: create auditbeat certs directories
+  file: path="{{ item }}" state=directory owner=root group=root mode=0750
+  with_items:
+    - "/etc/auditbeat/certs/"
+    - "/etc/auditbeat/certs/public/"
+    - "/etc/auditbeat/certs/private/"
+  when:
+    - auditbeat_enabled | bool == True
+    - logstash_ssl_enabled | bool == True
+  notify:
+    - restart auditbeat
+  tags:
+    - elk_forwarder
+
+- name: copy logstash certificate authority for filebeat
+  copy: src=client-ca.cer dest=/etc/filebeat/certs/public/client-ca.cer mode=0640 owner=root group=root
+  when:
+    - filebeat_enabled | bool == True
+    - logstash_ssl_enabled | bool == True
+  notify: 
+    - restart filebeat
+  tags:
+    - elk_forwarder
+
+- name: copy filebeat client certificate
+  copy: src=beats-client.crt dest=/etc/filebeat/certs/public/beats-client.crt mode=0640 owner=root group=root
+  when:
+    - filebeat_enabled | bool == True
+    - logstash_ssl_enabled | bool == True
+  notify: 
+    - restart filebeat
+  tags:
+    - elk_forwarder
+
+- name: copy filebeat client key
+  copy: src=beats-client.key dest=/etc/filebeat/certs/private/beats-client.key mode=0640 owner=root group=root
+  when:
+    - filebeat_enabled | bool == True
+    - logstash_ssl_enabled | bool == True
+  notify: 
+    - restart filebeat
+  tags:
+    - elk_forwarder
+
+- name: copy logstash certificate authority for metricbeat
+  copy: src=client-ca.cer dest=/etc/metricbeat/certs/public/client-ca.cer mode=0640 owner=root group=root
+  when:
+    - metricbeat_enabled | bool == True
+    - logstash_ssl_enabled | bool == True
+  notify: 
+    - restart metricbeat
+  tags:
+    - elk_forwarder
+
+- name: copy metricbeat client certificate
+  copy: src=beats-client.crt dest=/etc/metricbeat/certs/public/beats-client.crt mode=0640 owner=root group=root
+  when:
+    - metricbeat_enabled | bool == True
+    - logstash_ssl_enabled | bool == True
+  notify: 
+    - restart metricbeat
+  tags:
+    - elk_forwarder
+
+- name: copy metricbeat client key
+  copy: src=beats-client.key dest=/etc/metricbeat/certs/private/beats-client.key mode=0640 owner=root group=root
+  when:
+    - metricbeat_enabled | bool == True
+    - logstash_ssl_enabled | bool == True
+  notify: 
+    - restart metricbeat
+  tags:
+    - elk_forwarder
+
+- name: copy logstash certificate authority for packetbeat
+  copy: src=client-ca.cer dest=/etc/packetbeat/certs/public/client-ca.cer mode=0640 owner=root group=root
+  when:
+    - packetbeat_enabled | bool == True
+    - logstash_ssl_enabled | bool == True
+  notify: 
+    - restart packetbeat
+  tags:
+    - elk_forwarder
+
+- name: copy packetbeat client certificate
+  copy: src=beats-client.crt dest=/etc/packetbeat/certs/public/beats-client.crt mode=0640 owner=root group=root
+  when:
+    - packetbeat_enabled | bool == True
+    - logstash_ssl_enabled | bool == True
+  notify: 
+    - restart packetbeat
+  tags:
+    - elk_forwarder
+
+- name: copy packetbeat client key
+  copy: src=beats-client.key dest=/etc/packetbeat/certs/private/beats-client.key mode=0640 owner=root group=root
+  when:
+    - packetbeat_enabled | bool == True
+    - logstash_ssl_enabled | bool == True
+  notify: 
+    - restart packetbeat
+  tags:
+    - elk_forwarder
+
+- name: copy logstash certificate authority for auditbeat
+  copy: src=client-ca.cer dest=/etc/auditbeat/certs/public/client-ca.cer mode=0640 owner=root group=root
+  when:
+    - auditbeat_enabled | bool == True
+    - logstash_ssl_enabled | bool == True
+  notify: 
+    - restart auditbeat
+  tags:
+    - elk_forwarder
+
+- name: copy auditbeat client certificate
+  copy: src=beats-client.crt dest=/etc/auditbeat/certs/public/beats-client.crt mode=0640 owner=root group=root
+  when:
+    - auditbeat_enabled | bool == True
+    - logstash_ssl_enabled | bool == True
+  notify: 
+    - restart auditbeat
+  tags:
+    - elk_forwarder
+
+- name: copy auditbeat client key
+  copy: src=beats-client.key dest=/etc/auditbeat/certs/private/beats-client.key mode=0640 owner=root group=root
+  when:
+    - auditbeat_enabled | bool == True
+    - logstash_ssl_enabled | bool == True
+  notify: 
+    - restart auditbeat
+  tags:
+    - elk_forwarder
+
+- name: configure filebeat
+  template:
+    src: filebeat.j2
+    dest: /etc/filebeat/filebeat.yml
+    mode: 0640
+    owner: root
+    group: root
+    validate: "/usr/share/filebeat/bin/filebeat test config -c %s"
+  when:
+    - filebeat_enabled | bool == True
+  notify: 
+    - restart filebeat
+  tags:
+    - elk_forwarder
+    - properties
+
+- name: configure metricbeat
+  template:
+    src: metricbeat.j2
+    dest: /etc/metricbeat/metricbeat.yml
+    mode: 0640
+    owner: root
+    group: root
+    validate: "/usr/share/metricbeat/bin/metricbeat test config -c %s"
+  when:
+    - metricbeat_enabled | bool == True
+  notify: 
+    - restart metricbeat
+  tags:
+    - elk_forwarder
+    - properties
+
+- name: configure metricbeat (system module)
+  template:
+    src: metricbeat-module-system.j2
+    dest: /etc/metricbeat/modules.d/system.yml
+    mode: 0640
+    owner: root
+    group: root
+  when:
+    - metricbeat_enabled | bool == True
+    - metricbeat_system_enabled | bool == True
+  notify: 
+    - restart metricbeat
+  tags:
+    - elk_forwarder
+    - properties
+
+- name: configure metricbeat (remove system module if not used)
+  file:
+    path: /etc/metricbeat/modules.d/system.yml
+    state: absent
+  when:
+    - metricbeat_system_enabled | bool == False
+  notify: 
+    - restart metricbeat
+  tags:
+    - elk_forwarder
+    - properties
+
+- name: configure metricbeat (elasticsearch-xpack module)
+  template:
+    src: metricbeat-module-elasticsearch-xpack.j2
+    dest: /etc/metricbeat/modules.d/elasticsearch-xpack.yml
+    mode: 0640
+    owner: root
+    group: root
+  when:
+    - metricbeat_enabled | bool == True
+    - metricbeat_elasticsearch_enabled | bool == True
+  notify: 
+    - restart metricbeat
+  tags:
+    - elk_forwarder
+    - properties
+
+- name: configure metricbeat (remove elasticsearch-xpack module if not used)
+  file:
+    path: /etc/metricbeat/modules.d/elasticsearch-xpack.yml
+    state: absent
+  when:
+    - metricbeat_elasticsearch_enabled | bool == False
+  notify: 
+    - restart metricbeat
+  tags:
+    - elk_forwarder
+    - properties
+
+- name: configure metricbeat (kibana-xpack module)
+  template:
+    src: metricbeat-module-kibana-xpack.j2
+    dest: /etc/metricbeat/modules.d/kibana-xpack.yml
+    mode: 0640
+    owner: root
+    group: root
+  when:
+    - metricbeat_enabled | bool == True
+    - metricbeat_kibana_enabled | bool == True
+  notify: 
+    - restart metricbeat
+  tags:
+    - elk_forwarder
+    - properties
+
+- name: configure metricbeat (remove kibana-xpack module if not used)
+  file:
+    path: /etc/metricbeat/modules.d/kibana-xpack.yml
+    state: absent
+  when:
+    - metricbeat_kibana_enabled | bool == False
+  notify: 
+    - restart metricbeat
+  tags:
+    - elk_forwarder
+    - properties
+
+- name: configure metricbeat nginx module
+  template: src=nginx-stubstatus.j2 dest=/etc/metricbeat/modules.d/nginx-stubstatus.yml mode=0640 owner=root group=root
+  when:
+    - metricbeat_enabled | bool == True
+    - la_webserver == "nginx"
+  notify: 
+    - restart metricbeat
+  tags:
+    - elk_forwarder
+    - properties
+
+- name: configure auditbeat
+  template:
+    src: auditbeat.j2
+    dest: /etc/auditbeat/auditbeat.yml
+    mode: 0640
+    owner: root
+    group: root
+# Auditbeat has issues with this validation method due to attempting to hook itself into the kernel when another instance already exists
+#    validate: "/usr/share/auditbeat/bin/auditbeat test config -c %s"
+  when:
+    - auditbeat_enabled | bool == True
+  notify: 
+    - restart auditbeat
+  tags:
+    - elk_forwarder
+    - properties
+
+- name: configure packetbeat
+  template:
+    src: packetbeat.j2
+    dest: /etc/packetbeat/packetbeat.yml
+    mode: 0640
+    owner: root
+    group: root
+    validate: "/usr/share/packetbeat/bin/packetbeat test config -c %s"
+  when:
+    - packetbeat_enabled | bool == True
+  notify: 
+    - restart packetbeat
+  tags:
+    - elk_forwarder
+    - properties
+
+- name: notify filebeat if common elements changed
+  debug: msg="Notifying filebeat to restart"
+  when:
+    - filebeat_enabled | bool == True
+    - dns_entry.changed or apt_key.changed or apt_source.changed
+  ignore_errors: yes
+  notify:
+    - restart filebeat
+  tags:
+    - elk_forwarder
+
+- name: notify metricbeat if common elements changed
+  debug: msg="Notifying metricbeat to restart"
+  when:
+    - metricbeat_enabled | bool == True
+    - dns_entry.changed or apt_key.changed or apt_source.changed
+  ignore_errors: yes
+  notify: 
+    - restart metricbeat
+  tags:
+    - elk_forwarder
+
+- name: notify packetbeat if common elements changed
+  debug: msg="Notifying packetbeat to restart"
+  when:
+    - packetbeat_enabled | bool == True
+    - dns_entry.changed or apt_key.changed or apt_source.changed
+  ignore_errors: yes
+  notify: 
+    - restart packetbeat
+  tags:
+    - elk_forwarder
+
+- name: notify auditbeat if common elements changed
+  debug: msg="Notifying auditbeat to restart"
+  when:
+    - auditbeat_enabled | bool == True
+    - dns_entry.changed or apt_key.changed or apt_source.changed
+  ignore_errors: yes
+  notify: 
+    - restart auditbeat
+  tags:
+    - elk_forwarder
+
+- name: enable filebeat service
+  service:
+    name: "filebeat"
+    state: started
+    enabled: yes
+  become: yes
+  when:
+    - filebeat_enabled | bool == True
+  tags:
+    - elk_forwarder
+
+- name: enable metricbeat service
+  service:
+    name: "metricbeat"
+    state: started
+    enabled: yes
+  become: yes
+  when:
+    - metricbeat_enabled | bool == True
+  tags:
+    - elk_forwarder
+
+- name: enable packetbeat service
+  service:
+    name: "packetbeat"
+    state: started
+    enabled: yes
+  become: yes
+  when:
+    - packetbeat_enabled | bool == True
+  tags:
+    - elk_forwarder
+
+- name: enable auditbeat service
+  service:
+    name: "auditbeat"
+    state: started
+    enabled: yes
+  become: yes
+  when:
+    - auditbeat_enabled | bool == True
+  tags:
+    - elk_forwarder
+

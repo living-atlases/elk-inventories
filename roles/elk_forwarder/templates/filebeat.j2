@@ -1,0 +1,251 @@
+###################### Filebeat Configuration Example #########################
+
+# This file is an example configuration file highlighting only the most common
+# options. The filebeat.full.yml file from the same directory contains all the
+# supported options with more comments. You can use it as a reference.
+#
+# You can find the full configuration reference here:
+# https://www.elastic.co/guide/en/beats/filebeat/index.html
+
+#----------------------------- Filebeat Inputs -------------------------------#
+filebeat.inputs:
+#----------------------------- System
+- type: log
+  paths:
+  - /var/log/syslog
+  fields_under_root: true
+  fields:
+    log_type: syslog
+    syslog.type: syslog
+
+- type: log
+  paths:
+  - /var/log/mail.log
+  fields_under_root: true
+  fields:
+    log_type: syslog
+    syslog.type: mail
+
+- type: log
+  paths:
+  - /var/log/fail2ban.log
+  fields_under_root: true
+  fields:
+    log_type: syslog
+    syslog.type: fail2ban
+
+- type: log
+  paths:
+  - /var/log/auth.log
+  fields_under_root: true
+  fields:
+    log_type: syslog
+    syslog.type: auth
+
+{% if ufw_enabled is defined and ufw_enabled|bool == True %}
+- type: log
+  paths:
+  - /var/log/ufw.log
+  fields_under_root: true
+  fields:
+    log_type: ufw
+    syslog.type: ufw
+{% endif %}
+
+#----------------------------- Web Server
+{% if la_webserver is defined and la_webserver|lower != 'false' %}
+
+- type: log
+  paths:
+{% if la_webserver_access_logfiles is defined and la_webserver_access_logfiles|length > 0 %}
+{% for next_access_log in la_webserver_access_logfiles %}
+    - /var/log/{{la_webserver}}/{{next_access_log}}
+{% endfor %}
+{% else %}
+  - /var/log/{{la_webserver}}/access.log
+{% endif %}
+  fields_under_root: true
+  fields:
+    log_type: {{la_webserver}}
+    httpd.type: access
+
+- type: log
+  paths:
+{% if la_webserver_error_logfiles is defined and la_webserver_error_logfiles|length > 0 %}
+{% for next_error_log in la_webserver_error_logfiles %}
+    - /var/log/{{la_webserver}}/{{next_error_log}}
+{% endfor %}
+{% else %}
+  - /var/log/{{la_webserver}}/error.log
+{% endif %}
+  fields_under_root: true
+  fields:
+    log_type: {{la_webserver}}
+    httpd.type: error
+{% endif %}
+
+#----------------------------- apt history (multiline)
+- type: log
+  multiline.pattern: Start-Date
+  multiline.negate: true
+  multiline.match: after
+  multiline.flush_pattern: End-Date
+  timeout: 60s
+  paths:
+    - /var/log/apt/history.log
+  fields_under_root: true
+  fields:
+    log_type: apt
+
+#----------------------------- Tomcat
+{% if la_tomcat7_logfiles is defined and la_tomcat7_logfiles|lower != 'false' %}
+# tomcat 7 logs
+- type: log
+  multiline.pattern: '^[[:space:]]'
+  multiline.pattern: '^[[:space:]]+|^Caused by:'
+  multiline.negate: false
+  multiline.match: after
+
+  paths:
+    - /var/log/tomcat7/catalina.out
+    {% for webapplog in la_tomcat7_logfiles %}
+
+    - /var/log/tomcat7/{{webapplog}}.log
+    {% endfor %}
+
+  fields_under_root: true
+  fields:
+    log_type: tomcat
+    tomcat.version: 7
+{% endif %}
+
+{% if la_tomcat8_logfiles is defined and la_tomcat8_logfiles|lower != 'false' %}
+# tomcat 8 logs
+- type: log
+  multiline.pattern: '^[[:space:]]'
+  multiline.pattern: '^[[:space:]]+|^Caused by:'
+  multiline.negate: false
+  multiline.match: after
+  paths:
+    - /var/log/tomcat8/catalina.out
+    {% for webapplog in la_tomcat8_logfiles %}
+
+    - /var/log/tomcat8/{{webapplog}}.log
+    {% endfor %}
+
+  fields_under_root: true
+  fields:
+    log_type: tomcat
+    tomcat.version: 8
+{% endif %}
+
+#----------------------------- Cassandra
+- type: log
+  paths:
+    - /var/log/cassandra/output.log
+    - /var/log/cassandra/system.log
+  fields_under_root: true
+  fields:
+    log_type: cassandra
+
+#----------------------------- Solr
+- type: log
+  multiline.pattern: '^\d{4}\-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\.\d{3}\s[[:upper:]]+\s'
+  multiline.negate: true
+  multiline.match: after
+  paths:
+    - /opt/solr/server/logs/solr.log*
+  fields_under_root: true
+  fields:
+    log_type: solr
+
+- type: log
+  paths:
+    - /opt/solr/server/logs/solr_gc.log*
+  fields_under_root: true
+  fields:
+    log_type: gc
+
+#----------------------------- Biocache Store / Jenkins
+{% if filebeat_biocache_store_enabled is defined and filebeat_biocache_store_enabled|bool == True %}
+- type: log
+  paths:
+  - {{ biocache_store_statistics_log }}
+  fields_under_root: true
+  fields:
+    log_type: biocache_store
+{% endif %}
+
+#----------------------------- Java Web App (non-tomcat logs)
+{% if la_java_logfiles is defined and la_java_logfiles|lower != 'false' %}
+- type: log
+  multiline.pattern: '^[[:space:]]'
+  multiline.pattern: '^[[:space:]]+|^Caused by:'
+  multiline.negate: false
+  multiline.match: after
+  paths:
+    {% for webapplog in la_java_logfiles %}
+    - /var/log/{{webapplog}}
+    {% endfor %}
+
+  fields_under_root: true
+  fields:
+    log_type: webapplog
+{% endif %}
+
+#----------------------------- Logstash output --------------------------------
+output.logstash:
+  # The Logstash hosts
+  hosts: ["{{la_logstash_host}}"]
+
+  {% if logstash_ssl_enabled|bool == True %}
+  # Optional SSL. By default is off.
+  # List of root certificates for HTTPS server verifications
+  ssl.certificate_authorities: ["/etc/filebeat/certs/public/client-ca.cer"]
+
+  # Certificate for SSL client authentication
+  ssl.certificate: "/etc/filebeat/certs/public/beats-client.crt"
+
+  # Client Certificate Key
+  ssl.key: "/etc/filebeat/certs/private/beats-client.key"
+  {% endif %}
+
+#================================ General =====================================
+
+# The name of the shipper that publishes the network data. It can be used to group
+# all the transactions sent by a single shipper in the web interface.
+name: {{la_hostname}}
+
+# The tags of the shipper are included in their own field with each
+# transaction published.
+#tags: ["service-X", "web-tier"]
+{% if la_tags|lower != 'false' %}
+tags: {{ la_tags }}
+{% endif %}
+
+# Optional fields that you can specify to add additional information to the
+# output.
+#fields:
+#  env: test
+
+
+#================================ Logging =====================================
+
+# Sets log level. The default log level is info.
+# Available log levels are: critical, error, warning, info, debug
+
+logging.level: {{ filebeat_logging_level }}
+logging.to_syslog: false
+logging.to_eventlog: false
+logging.metrics.enabled: false
+logging.to_files: true
+logging.files:
+  path: /var/log/filebeat
+  name: filebeat
+  keepfiles: 7
+  rotateeverybytes: 10485760 # = 10MB
+
+# At debug level, you can selectively enable logging only for some components.
+# To enable all selectors use ["*"]. Examples of other selectors are "beat",
+# "publish", "service".
+#logging.selectors: ["*"]

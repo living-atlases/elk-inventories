@@ -1,0 +1,18 @@
+# Module: kibana
+# Docs: https://www.elastic.co/guide/en/beats/metricbeat/7.10/metricbeat-module-kibana.html
+
+{% if metricbeat_kibana_enabled is defined and metricbeat_kibana_enabled|bool == True %}
+- module: kibana
+  metricsets:
+    - stats
+  xpack.enabled: true
+  period: 60s
+  hosts: ["{{ kibana_node_ip }}:5601"]
+  #basepath: ""
+  {% if kibana_security_enabled|bool == True %}
+  username: "{{ metricbeat_kibana_monitoring_username }}"
+  password: "{{ metricbeat_kibana_monitoring_password }}"
+  {% endif %}
+{% else %}
+# Kibana module disabled for this metricbeat instance
+{% endif %}
